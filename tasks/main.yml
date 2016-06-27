@@ -10,9 +10,18 @@
   git: >
     dest={{ deploy_release_dir }}
     repo={{ deploy_update_code_git.repository }}
-    version={{ deploy_update_code_git.version }}
+    version={{ npm_deploy_branch | default("master") }}
     depth=1
-  notify: symlink release
+    accept_hostkey=yes
+
+- name: symlink release
+  file: >
+    src={{ deploy_release_dir }}
+    dest={{ deploy_application_home }}/current
+    state=link
+    owner={{ ansible_ssh_user }}
+    group={{ ansible_ssh_user }}
+    force=yes
 
 - name: create shared directories
   file: >
@@ -22,7 +31,6 @@
     group={{ ansible_ssh_user }}
   with_items:
     - '{{ deploy_logs_dir }}'
-    - '{{ deploy_assets_dir }}'
 
 - name: make sure that files/directories that are going to be symlinks do not exist
   file: >
@@ -31,7 +39,6 @@
     force=yes
   with_items:
     - '{{ deploy_release_dir }}/{{ deploy_update_code_git_defaults.logs_path }}'
-    - '{{ deploy_release_dir }}/{{ deploy_update_code_git_defaults.assets_path }}'
 
 - name: create symlinks to shared directories
   file: >
@@ -43,4 +50,3 @@
     force=yes
   with_items:
     - { src: '{{ deploy_logs_dir }}',   dest: '{{ deploy_release_dir }}/{{ deploy_update_code_git_defaults.logs_path }}' }
-    - { src: '{{ deploy_assets_dir }}', dest: '{{ deploy_release_dir }}/{{ deploy_update_code_git_defaults.assets_path }}' }
